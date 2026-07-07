@@ -1,1 +1,26 @@
-go*
+# Binario compilato (il nome del tuo modulo)
+/eyetracker
+eyetracker.exe
+
+# Binari e artefatti Go generici
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Output di build / vendoring
+/bin/
+/dist/
+
+# Segreti e config locali (API key dei connector — MAI su GitHub)
+.env
+*.env
+.env.local
+
+# Roba di sistema / editor
+.DS_Store
+.vscode/
+.idea/

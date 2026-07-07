@@ -23,7 +23,7 @@ func stringLen(str string)(int){
 //base58 checker 
 //funzione che scorre i caratteri della stringa e controlla per ogni carattere se si trova in questo alfabeto: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
 // niente:  0, O, I, l e altri caratteri
-func isTrush(wallet string)(bool){
+func isBase58(wallet string)(bool){
 	alphabet := "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 	for _, c := range wallet{
 		if(!strings.Contains(alphabet,string(c))){
@@ -32,6 +32,17 @@ func isTrush(wallet string)(bool){
 	}
 	return true
 	
+}
+
+//HEX checker
+func isHex(payload string)(bool){
+	alphabet := "0123456789abcdefABCDEF"
+	for _, c := range payload{
+		if(!strings.Contains(alphabet,string(c))){
+			return false
+		}
+	}
+	return true
 }
 
 
@@ -43,7 +54,7 @@ func (W *Wallet)Indentification()(error){
 	//subtype Legacy P2PKH
 	case strings.HasPrefix(wallet, "1") && (stringLen(wallet) >= 24 && stringLen(wallet) <= 34):
 		//REMOVE TRASH
-		if(!isTrush(wallet)){
+		if(!isBase58(wallet)){
 			return errors.New("Wallet is trash: " + wallet)
 		}
 		W.Type = "BTC"
@@ -51,7 +62,7 @@ func (W *Wallet)Indentification()(error){
 
 	case strings.HasPrefix(wallet,"3") && stringLen(wallet) == 34:
 		//REMOVE TRASH
-		if(!isTrush(wallet)){
+		if(!isBase58(wallet)){
 			return errors.New("Wallet is trash: " + wallet)
 		}
 		W.Type = "BTC"
@@ -65,17 +76,23 @@ func (W *Wallet)Indentification()(error){
 	//TEST NET
 	case (strings.HasPrefix(wallet, "m") || strings.HasPrefix(wallet, "n") || strings.HasPrefix(wallet, "2") || strings.HasPrefix(wallet, "tb1")):
 		//REMOVE TRASH
-		if(!isTrush(wallet)){
+		if(!isBase58(wallet)){
 			return errors.New("Wallet is trash: " + wallet)
 		}
 		W.Type = "BTC"
 		W.Subtype = "TEST-NET"
 
+	//check if is EVM
+	case stringLen(wallet) == 42 && strings.HasPrefix(wallet,"0x"):
+		if(!isHex(wallet[2:])){
+			return errors.New("Wallet is invalid: " + wallet)
+		}
+		W.Type = "EVM"
+		W.Subtype = ""
 	default:
 		W.Type = "NONE"
 		W.Subtype = "NONE"
 	}
-
 	
 	return  nil
 }
