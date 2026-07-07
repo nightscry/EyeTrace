@@ -1,0 +1,46 @@
+package main
+
+import (
+	"eyetracker/src"
+	"fmt"
+)
+
+func main(){
+	addresses := []string{
+      // --- MAINNET ---
+      "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",                              // P2PKH  (prefisso 1)
+      "17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem",                              // P2PKH  (prefisso 1)
+      "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy",                              // P2SH   (prefisso 3)
+      "342ftSRCvFHfCeFFBuz4xwbeqnDw6BGUey",                              // P2SH   (prefisso 3)
+      "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",                     // Bech32 P2WPKH (bc1q, corto)
+      "bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3", // Bech32 P2WSH  (bc1q, lungo)
+      "bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr", // Bech32m P2TR Taproot (bc1p)
+
+      // --- TESTNET ---
+      "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn",                             // P2PKH testnet (prefisso m)
+      "n2ZNV88uQbede7C5M5jzi6SyG4GVuPpng6",                             // P2PKH testnet (prefisso n)
+      "2MzQwSSnBHWHqSAqtTVQ6v47XtaisrJa1Vc",                            // P2SH  testnet (prefisso 2)
+      "tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx",                     // Bech32 testnet (tb1q)
+      "tb1pqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesf3hn0c", // Bech32m testnet Taproot (tb1p)
+
+      // --- NEGATIVI (devono dare UNKNOWN / non-BTC) ---
+      "0xde0B295669a9FD93d5F28D9Ec85E40f4cB697BAe",                     // EVM, non BTC
+      "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",                             // Tron, non BTC
+      "non-un-indirizzo",                                              // spazzatura
+      "",                                                              // stringa vuota
+  }
+
+  for _, w := range addresses{
+	target := src.Wallet{
+		Address: w,
+	}
+	err := target.Indentification()
+	if(err!=nil){
+		fmt.Println(err)
+		continue
+	}
+	fmt.Printf("Wallet: %s\n",target.Address)
+	fmt.Println(target.Type)
+	fmt.Println(target.Subtype)
+  }
+}
