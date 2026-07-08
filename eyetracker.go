@@ -28,6 +28,10 @@ func main(){
       "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",                             // Tron, non BTC
       "non-un-indirizzo",                                              // spazzatura
       "",                                                              // stringa vuota
+	  "DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L",   // DOGE P2PKH (D)
+	"DBKr5akdkAsBrQr4x1qNQ5DsZfLbEMFB5c",   // DOGE P2PKH (D)
+	"A2fCS44sYY9dpFDLFdcbWkVUUj2iBqx8gY",   // DOGE P2SH  (A)
+	"9vT8kFAghF1Jt73GxSGrhCPYWSEDeYqTuh",   // DOGE P2SH  (9)	
   }
 
   for _, w := range addresses{

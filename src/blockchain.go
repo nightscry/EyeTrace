@@ -55,7 +55,7 @@ func (W *Wallet)Indentification()(error){
 	case strings.HasPrefix(wallet, "1") && (stringLen(wallet) >= 24 && stringLen(wallet) <= 34):
 		//REMOVE TRASH
 		if(!isBase58(wallet)){
-			return errors.New("Wallet is trash: " + wallet)
+			return errors.New("Wallet is invalid: " + wallet)
 		}
 		W.Type = "BTC"
 		W.Subtype = "P2PKH"
@@ -63,7 +63,7 @@ func (W *Wallet)Indentification()(error){
 	case strings.HasPrefix(wallet,"3") && stringLen(wallet) == 34:
 		//REMOVE TRASH
 		if(!isBase58(wallet)){
-			return errors.New("Wallet is trash: " + wallet)
+			return errors.New("Wallet is invalid: " + wallet)
 		}
 		W.Type = "BTC"
 		W.Subtype = "P2SH"
@@ -89,6 +89,23 @@ func (W *Wallet)Indentification()(error){
 		}
 		W.Type = "EVM"
 		W.Subtype = ""
+
+
+	//check if is dogecoin
+	case stringLen(wallet) == 34 && strings.HasPrefix(wallet,"D"):
+		if(!isBase58(wallet)){
+			return errors.New("Wallet is invalid: " + wallet)
+		}
+		W.Type = "DOGE"
+		W.Subtype = "P2PKH"
+	
+	case stringLen(wallet) == 34 && (strings.HasPrefix(wallet,"A") || strings.HasPrefix(wallet,"9")):
+		if(!isBase58(wallet)){
+			return errors.New("Wallet is invalid: " + wallet)
+		}
+		W.Type = "DOGE"
+		W.Subtype = "P2SH"
+
 	default:
 		W.Type = "NONE"
 		W.Subtype = "NONE"
