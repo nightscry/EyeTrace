@@ -77,7 +77,7 @@ func (W *Wallet)Indentification()(error){
 	case (strings.HasPrefix(wallet, "m") || strings.HasPrefix(wallet, "n") || strings.HasPrefix(wallet, "2") || strings.HasPrefix(wallet, "tb1")):
 		//REMOVE TRASH
 		if(!isBase58(wallet)){
-			return errors.New("Wallet is trash: " + wallet)
+			return errors.New("Wallet is invalid: " + wallet)
 		}
 		W.Type = "BTC"
 		W.Subtype = "TEST-NET"
@@ -105,6 +105,14 @@ func (W *Wallet)Indentification()(error){
 		}
 		W.Type = "DOGE"
 		W.Subtype = "P2SH"
+	
+	//check if Tron
+	case stringLen(wallet) == 34 && strings.HasPrefix(wallet, "T"):
+		if(!isBase58(wallet)){
+			return errors.New("Wallet is invalid: " + wallet)
+		}
+		W.Type = "TRON"
+		W.Subtype = "TRC20"
 
 	default:
 		W.Type = "NONE"
