@@ -106,13 +106,29 @@ func (W *Wallet)Indentification()(error){
 		W.Type = "DOGE"
 		W.Subtype = "P2SH"
 	
-	//check if Tron
+	//check if is Tron
 	case stringLen(wallet) == 34 && strings.HasPrefix(wallet, "T"):
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
 		W.Type = "TRON"
 		W.Subtype = "TRC20"
+	
+	//check if is XRP
+	case (stringLen(wallet) >=25 && stringLen(wallet) <=35) && strings.HasPrefix(wallet, "r"):
+		if(!isBase58(wallet)){
+			return errors.New("Wallet is invalid: " + wallet)
+		}
+		W.Type = "XRP"
+		W.Subtype = ""
+	
+	//check if is solana
+	case stringLen(wallet) >= 32 && stringLen(wallet) <=44:
+		if(!isBase58(wallet)){
+			return errors.New("Wallet is invalid: " + wallet)
+		}
+		W.Type = "SOLANA"
+		W.Subtype = ""
 
 	default:
 		W.Type = "NONE"

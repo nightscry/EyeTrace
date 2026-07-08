@@ -31,7 +31,12 @@ func main(){
 	  "DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L",   // DOGE P2PKH (D)
 	"DBKr5akdkAsBrQr4x1qNQ5DsZfLbEMFB5c",   // DOGE P2PKH (D)
 	"A2fCS44sYY9dpFDLFdcbWkVUUj2iBqx8gY",   // DOGE P2SH  (A)
-	"9vT8kFAghF1Jt73GxSGrhCPYWSEDeYqTuh",   // DOGE P2SH  (9)	
+	"9vT8kFAghF1Jt73GxSGrhCPYWSEDeYqTuh",   // DOGE P2SH  (9)
+	"rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh",   // XRP
+	"rLHzPsX6oXkzU2qL12kHCH8G8cnZv1rBJh",   // XRP	
+	"DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6",             // SOL (~33 char)
+"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",  // SOL (44 char)
+"So11111111111111111111111111111111111111112",  // SOL (wrapped SOL mint)
   }
 
   for _, w := range addresses{
