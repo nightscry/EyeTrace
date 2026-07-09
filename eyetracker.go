@@ -37,6 +37,21 @@ func main(){
 	"DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6",             // SOL (~33 char)
 "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",  // SOL (44 char)
 "So11111111111111111111111111111111111111112",  // SOL (wrapped SOL mint)
+// BTC P2PKH
+  "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",   // ✅ valido (genesis)
+  "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNb",   // ❌ checksum errato (a→b)
+
+  // BTC P2SH
+  "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy",   // ✅ valido
+  "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLz",   // ❌ checksum errato (y→z)
+
+  // DOGE
+  "DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L",   // ✅ valido
+  "DH5yaieqoZN36fDVciNyRueRGvGLR3mr7K",   // ❌ checksum errato (L→K)
+
+  // Tron
+  "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",   // ✅ valido
+  "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6u",   // ❌ checksum errato (t→u)
   }
 
   for _, w := range addresses{
