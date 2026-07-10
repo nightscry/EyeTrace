@@ -3,12 +3,17 @@ package src
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"math/big"
 	"strings"
+
+	"golang.org/x/crypto/sha3"
 )
 
 const alphabetBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+const alphabetBase58XRP = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz"
 const alphabetHex = "0123456789abcdefABCDEF"
 
 type Wallet struct{
@@ -41,21 +46,63 @@ func isBase58(wallet string)(bool){
 	
 }
 
+//checksum EVM
+func checkSumEvm(wallet string)(bool){
+	alphabet := "asdfghjklqwertyuiopzxcvbnm"
+
+	var result string
+
+	hash := sha3.NewLegacyKeccak256()
+
+	lowerWallet := strings.ToLower(wallet[2:])
+	fmt.Println(lowerWallet)
+
+	hash.Write([]byte(lowerWallet))
+	keccakHashRaw := hash.Sum(nil)
+	keccakHash := hex.EncodeToString(keccakHashRaw)
+	
+	
+	for i, c := range lowerWallet{
+
+		if(strings.Contains(alphabet,string(c))){
+			charHash := keccakHash[i]
+			if(strings.Contains("89abcdef",string(charHash))){
+				result += strings.ToUpper(string(c))
+			}else{
+				result += string(c)
+			}
+		}else{
+			result += string(c)
+		}
+
+	}
+	fmt.Println("Calcolato: "+result)
+	fmt.Println("Orginale: "+ wallet)
+
+	if(result == wallet[2:]){
+		return true
+	}
+
+	return false
+}
+
+
 //checksum checker BTC/DOGE/TRON
-func checkSum(wallet string)(bool){
+func checkSum(wallet string, alphabet string)(bool){
 	var num big.Int
 	base := big.NewInt(58)
 
 	for _, c := range wallet{
-		index := strings.IndexRune(alphabetBase58, c)
+		index := strings.IndexRune(alphabet, c)
 
 		num.Mul(&num, base)
 		num.Add(&num, big.NewInt(int64(index)))
 	}
 
 	zeros := 0
+	t := alphabet[0]
 	for _, c := range wallet {
-		if c != '1' {
+		if c != rune(t) {
 			break 
 		}
 		zeros++
@@ -101,7 +148,7 @@ func (W *Wallet)Indentification()(error){
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
-		if(checkSum(wallet)){
+		if(checkSum(wallet,alphabetBase58)){
 			W.Type = "BTC"
 			W.Subtype = "P2PKH"
 		}else{
@@ -115,7 +162,7 @@ func (W *Wallet)Indentification()(error){
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
-		if(checkSum(wallet)){
+		if(checkSum(wallet,alphabetBase58)){
 			W.Type = "BTC"
 			W.Subtype = "P2SH"
 		}else{
@@ -145,8 +192,12 @@ func (W *Wallet)Indentification()(error){
 		if(!isHex(wallet[2:])){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
-		W.Type = "EVM"
-		W.Subtype = ""
+		if(checkSumEvm(wallet)){
+			W.Type = "EVM"
+			W.Subtype = ""
+		}else{
+			return errors.New("Wallet is invalid: " + wallet)
+		}
 
 
 	//check if is dogecoin
@@ -154,7 +205,7 @@ func (W *Wallet)Indentification()(error){
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
-		if(checkSum(wallet)){
+		if(checkSum(wallet, alphabetBase58)){
 			W.Type = "DOGE"
 			W.Subtype = "P2PKH"
 		}else{
@@ -165,7 +216,7 @@ func (W *Wallet)Indentification()(error){
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
-		if(checkSum(wallet)){
+		if(checkSum(wallet, alphabetBase58)){
 			W.Type = "DOGE"
 			W.Subtype = "P2SH"
 		}else{
@@ -176,7 +227,7 @@ func (W *Wallet)Indentification()(error){
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
-		if(checkSum(wallet)){
+		if(checkSum(wallet, alphabetBase58)){
 			W.Type = "TRON"
 			W.Subtype = "TRC20"
 		}else{
@@ -188,8 +239,12 @@ func (W *Wallet)Indentification()(error){
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
-		W.Type = "XRP"
-		W.Subtype = ""
+		if(checkSum(wallet,alphabetBase58XRP)){
+			W.Type = "XRP"
+			W.Subtype = ""
+		}else{
+			return errors.New("CheckSum invalid of this: "+ wallet)
+		}
 	
 	//check if is solana
 	case stringLen(wallet) >= 32 && stringLen(wallet) <=44:
