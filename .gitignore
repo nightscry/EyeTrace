@@ -24,3 +24,7 @@ eyetracker.exe
 .DS_Store
 .vscode/
 .idea/
+
+
+# File di debug
+addressTest.txt
