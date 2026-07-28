@@ -33,8 +33,9 @@ Built for on-chain investigative analysis: following the flow of money between w
 - **Automatic chain detection** from the address alone, with cryptographic checksum validation (not just pattern matching):
   - Bitcoin Base58Check (P2PKH, P2SH) and Bech32 / Bech32m (SegWit, Taproot)
   - Ethereum EIP-55 (Keccak-256)
+  - Dogecoin and Tron Base58Check
   - Ripple Base58 (XRPL alphabet)
-- **Keyless connectors** — no API key required (BTC via Blockstream, ETH via Blockscout)
+- **Keyless connectors** — no API key required (BTC via Blockstream, ETH via Blockscout, DOGE via BlockCypher)
 - **Interactive force-directed graph** — draggable nodes, spring layout, continuous animation
 - **Details panel** — balance, address, amounts exchanged, transaction count (unit adapts per chain)
 - **Native UI** with the NightScry theme (Fyne)
@@ -47,10 +48,12 @@ Built for on-chain investigative analysis: following the flow of money between w
 |-------|:--------------------:|:-------------------------:|
 | Bitcoin (Legacy/SegWit/Taproot) | Yes | Yes |
 | Ethereum / EVM | Yes | Yes |
-| Dogecoin | Yes | Planned |
+| Dogecoin | Yes | Yes |
 | Tron | Yes | Planned |
 | XRP | Yes | Planned |
-| Solana | Yes | Planned |
+| Solana | Pattern only | Planned |
+
+<sub>Solana addresses are raw Ed25519 public keys: they carry no checksum to verify, so validation is limited to alphabet and length by design.</sub>
 
 ---
 
@@ -97,7 +100,8 @@ eyetracker/
 │   ├── validate.go        # alphabets + validation
 │   ├── model.go           # Transfer, Wallet, Connector interface
 │   ├── BTCconnector.go    # Blockstream (UTXO model)
-│   └── ETHConnector.go    # Blockscout (account model)
+│   ├── ETHConnector.go    # Blockscout (account model)
+│   └── DOGEconnetor.go    # BlockCypher (UTXO model)
 └── gui/                   # interface (package gui)
     ├── app.go             # app + theme + splash -> dashboard
     ├── theme.go           # NightScry theme (palette + embedded logo)
@@ -128,7 +132,7 @@ Core design: a shared `Connector` interface and a chain-agnostic `Transfer`, so 
 
 ## Stack
 
-Go, Fyne v2 (native GUI), golang.org/x/crypto (Keccak-256), math/big (wei/satoshi precision), keyless explorers (Blockstream, Blockscout).
+Go, Fyne v2 (native GUI), golang.org/x/crypto (Keccak-256), math/big (wei/satoshi precision), keyless explorers (Blockstream, Blockscout, BlockCypher).
 
 ---
 
