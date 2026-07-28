@@ -66,7 +66,7 @@ func (p *SidePanel) set(objs ...fyne.CanvasObject) {
 }
 
 func (p *SidePanel) showEmpty() {
-	hint := widget.NewLabelWithStyle("Clicca un nodo nel grafo\nper vederne i dettagli",
+	hint := widget.NewLabelWithStyle("Click a node in the graph\nto see its details",
 		fyne.TextAlignLeading, fyne.TextStyle{Italic: true})
 	p.set(
 		titleText("EYETRACE"),
@@ -79,27 +79,27 @@ func (p *SidePanel) showEmpty() {
 func (p *SidePanel) Show(n NodeInfo) {
 	if n.IsTarget {
 		p.set(
-			titleText("👁  WALLET ANALIZZATO"),
+			titleText("👁  ANALYZED WALLET"),
 			widget.NewSeparator(),
-			sectionHdr("SALDO"),
+			sectionHdr("BALANCE"),
 			bigValue(fmt.Sprintf("%.8f %s", n.Balance, n.Asset)),
 			widget.NewSeparator(),
-			sectionHdr("INDIRIZZO"),
+			sectionHdr("ADDRESS"),
 			addrLabel(n.Address),
-			sectionHdr("RUOLO"),
-			value("Target dell'indagine"),
+			sectionHdr("ROLE"),
+			value("Investigation target"),
 		)
 		return
 	}
 	p.set(
-		titleText("CONTROPARTE"),
+		titleText("COUNTERPARTY"),
 		widget.NewSeparator(),
-		sectionHdr("INDIRIZZO"),
+		sectionHdr("ADDRESS"),
 		addrLabel(n.Address),
 		widget.NewSeparator(),
-		sectionHdr("SCAMBIATO COL TARGET"),
+		sectionHdr("EXCHANGED WITH TARGET"),
 		bigValue(fmt.Sprintf("%.8f %s", n.Amount, n.Asset)),
-		sectionHdr("N. TRANSAZIONI"),
+		sectionHdr("TRANSACTIONS"),
 		value(fmt.Sprintf("%d", n.Count)),
 	)
 }

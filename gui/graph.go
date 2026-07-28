@@ -397,7 +397,7 @@ func NewGraphView() *GraphView {
 		Root: container.NewStack(bg, container.NewCenter(eye), border, host),
 		host: host,
 	}
-	gv.Message("inserisci un wallet e premi Analizza")
+	gv.Message("enter a wallet and press Analyze")
 	return gv
 }
 

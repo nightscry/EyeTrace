@@ -16,14 +16,14 @@ func showSplash(a fyne.App, onDone func()) {
 	if drv, ok := a.Driver().(desktop.Driver); ok {
 		w = drv.CreateSplashWindow()
 	} else {
-		w = a.NewWindow("EyeTracking")
+		w = a.NewWindow("EyeTrace")
 	}
 
 	logo := canvas.NewImageFromResource(logoResource)
 	logo.FillMode = canvas.ImageFillContain
 	logo.SetMinSize(fyne.NewSize(180, 180))
 
-	title := canvas.NewText("EyeTracking", colPurpleHi)
+	title := canvas.NewText("EyeTrace", colPurpleHi)
 	title.TextStyle = fyne.TextStyle{Bold: true}
 	title.TextSize = 24
 	title.Alignment = fyne.TextAlignCenter

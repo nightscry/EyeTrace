@@ -21,7 +21,7 @@ func (W *Wallet)Indentification()(error){
 			W.Type = "BTC"
 			W.Subtype = "P2PKH"
 		}else{
-			return errors.New("CheckSum invalid of this: "+ wallet)
+			return errors.New("Invalid checksum: "+ wallet)
 		}
 
 
@@ -34,7 +34,7 @@ func (W *Wallet)Indentification()(error){
 			W.Type = "BTC"
 			W.Subtype = "P2SH"
 		}else{
-			return errors.New("CheckSum invalid of this: "+ wallet)
+			return errors.New("Invalid checksum: "+ wallet)
 		}
 
 
@@ -86,7 +86,7 @@ func (W *Wallet)Indentification()(error){
 			W.Type = "DOGE"
 			W.Subtype = "P2PKH"
 		}else{
-			return errors.New("CheckSum invalid of this: "+ wallet)
+			return errors.New("Invalid checksum: "+ wallet)
 		}
 
 	case stringLen(wallet) == 34 && (strings.HasPrefix(wallet,"A") || strings.HasPrefix(wallet,"9")):
@@ -97,7 +97,7 @@ func (W *Wallet)Indentification()(error){
 			W.Type = "DOGE"
 			W.Subtype = "P2SH"
 		}else{
-			return errors.New("CheckSum invalid of this: "+ wallet)
+			return errors.New("Invalid checksum: "+ wallet)
 		}
 	// Tron
 	case stringLen(wallet) == 34 && strings.HasPrefix(wallet, "T"):
@@ -108,7 +108,7 @@ func (W *Wallet)Indentification()(error){
 			W.Type = "TRON"
 			W.Subtype = "TRC20"
 		}else{
-			return errors.New("CheckSum invalid of this: "+ wallet)
+			return errors.New("Invalid checksum: "+ wallet)
 		}
 
 	// XRP uses its own base58 alphabet
@@ -120,7 +120,7 @@ func (W *Wallet)Indentification()(error){
 			W.Type = "XRP"
 			W.Subtype = ""
 		}else{
-			return errors.New("CheckSum invalid of this: "+ wallet)
+			return errors.New("Invalid checksum: "+ wallet)
 		}
 
 	// Solana: raw Ed25519 key, no checksum to verify

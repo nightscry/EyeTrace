@@ -15,7 +15,7 @@ func showDashboard(a fyne.App) {
 	w := a.NewWindow("EyeTrace — NightScry")
 
 	input := widget.NewEntry()
-	input.SetPlaceHolder("Inserisci un indirizzo wallet (BTC, ETH, ...)")
+	input.SetPlaceHolder("Enter a wallet address (BTC, ETH, ...)")
 
 	panel := NewSidePanel()
 
@@ -33,7 +33,7 @@ func showDashboard(a fyne.App) {
 			return
 		}
 		limit, nodes := txLimit, nodeCap // snapshot on the UI thread, no race with the goroutine
-		graph.Message("· · ·  caricamento  · · ·")
+		graph.Message("· · ·  loading  · · ·")
 
 		// network work off the UI thread, otherwise the window freezes
 		go func() {
@@ -55,7 +55,7 @@ func showDashboard(a fyne.App) {
 
 			default:
 				fyne.Do(func() {
-					graph.Message("Grafo disponibile solo per BTC, DOGE e ETH (per ora).  Tipo rilevato: " + wl.Type)
+					graph.Message("Graph available for BTC, DOGE and ETH only (for now).  Detected type: " + wl.Type)
 				})
 				return
 			}
@@ -66,7 +66,7 @@ func showDashboard(a fyne.App) {
 
 			balance, err := connector.GetBalance(wl.Address)
 			if(err!=nil){
-				fyne.Do(func() { graph.Message("❌ errore di rete: " + err.Error()) })
+				fyne.Do(func() { graph.Message("❌ network error: " + err.Error()) })
 				return
 			}
 			wl.Balance = balance.Balance
@@ -75,7 +75,7 @@ func showDashboard(a fyne.App) {
 			if len(transfers) == 0 {
 				t, err := connector.GetTransactions(addr,limit)
 				if err != nil {
-					fyne.Do(func() { graph.Message("❌ errore di rete: " + err.Error()) })
+					fyne.Do(func() { graph.Message("❌ network error: " + err.Error()) })
 					return
 				}
 				transfers = t
@@ -86,7 +86,7 @@ func showDashboard(a fyne.App) {
 		}()
 	}
 
-	analyze := widget.NewButton("🔍  Analizza", analyzeFn)
+	analyze := widget.NewButton("🔍  Analyze", analyzeFn)
 	analyze.Importance = widget.HighImportance
 	input.OnSubmitted = func(string) { analyzeFn() }
 
@@ -131,7 +131,7 @@ func showDashboard(a fyne.App) {
 	btnHigh = widget.NewButton("High", func() { setDepth(highTx, highNodes, btnHigh) })
 	setDepth(medTx, medNodes, btnMed) // default
 
-	depthLabel := canvas.NewText("Ricerca", colSilver)
+	depthLabel := canvas.NewText("Depth", colSilver)
 	depthLabel.TextStyle = fyne.TextStyle{Bold: true}
 
 	depthRow := container.NewBorder(nil, nil, depthLabel, nil,
