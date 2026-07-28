@@ -61,7 +61,7 @@ Built for on-chain investigative analysis: following the flow of money between w
 
 ```bash
 # clone
-git clone <repo-url> && cd eyetracker
+git clone https://github.com/nightscry/EyeTracker.git && cd EyeTracker
 
 # dependencies
 go mod download
@@ -133,6 +133,12 @@ Core design: a shared `Connector` interface and a chain-agnostic `Transfer`, so 
 ## Stack
 
 Go, Fyne v2 (native GUI), golang.org/x/crypto (Keccak-256), math/big (wei/satoshi precision), keyless explorers (Blockstream, Blockscout, BlockCypher).
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
 
 ---
 
