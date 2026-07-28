@@ -61,7 +61,7 @@ Built for on-chain investigative analysis: following the flow of money between w
 
 ```bash
 # clone
-git clone https://github.com/nightscry/EyeTracker.git && cd EyeTracker
+git clone https://github.com/nightscry/EyeTrace.git && cd EyeTrace
 
 # dependencies
 go mod download
