@@ -11,31 +11,31 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-// showDashboard apre la finestra principale: barra di input in alto + area grafo sotto.
 func showDashboard(a fyne.App) {
 	w := a.NewWindow("EyeTrace — NightScry")
 
-	// --- barra input ---
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Inserisci un indirizzo wallet (BTC, ETH, ...)")
 
-	// pannello laterale coi dati del nodo selezionato
 	panel := NewSidePanel()
 
-	// area del grafo (con watermark occhio); la popoliamo dopo l'analisi
 	graph := NewGraphView()
-	// quando clicchi un nodo nel grafo, aggiorna il pannello
 	graph.OnSelect = func(n NodeInfo) { panel.Show(n) }
 
-	// funzione di analisi (riusata dal bottone e dall'invio nell'input)
+	// search depth, driven by the Low/Medium/High buttons below:
+	// txLimit = how many txs to download, nodeCap = how many counterparties to draw.
+	txLimit := 100
+	nodeCap := 25
+
 	analyzeFn := func() {
 		addr := strings.TrimSpace(input.Text)
 		if addr == "" {
 			return
 		}
+		limit, nodes := txLimit, nodeCap // snapshot on the UI thread, no race with the goroutine
 		graph.Message("· · ·  caricamento  · · ·")
 
-		// lavoro pesante (rete) in una goroutine → la UI non si blocca
+		// network work off the UI thread, otherwise the window freezes
 		go func() {
 			wl := src.Wallet{Address: addr}
 			var connector src.Connector
@@ -44,20 +44,22 @@ func showDashboard(a fyne.App) {
 				fyne.Do(func() { graph.Message("❌ " + err.Error()) })
 				return
 			}
-	
+
 			switch wl.Type{
 			case "BTC":
 				connector = src.BTCconnector{}
 			case "ETH":
 				connector = src.ETHConnector{}
-			
+			case "DOGE":
+				connector = src.DOGEConnector{}
+
 			default:
 				fyne.Do(func() {
-					graph.Message("Grafo disponibile solo per BTC (per ora).  Tipo rilevato: " + wl.Type)
+					graph.Message("Grafo disponibile solo per BTC, DOGE e ETH (per ora).  Tipo rilevato: " + wl.Type)
 				})
 				return
 			}
-			
+
 
 
 
@@ -67,11 +69,11 @@ func showDashboard(a fyne.App) {
 				fyne.Do(func() { graph.Message("❌ errore di rete: " + err.Error()) })
 				return
 			}
-			wl.Balance = balance 
-			// riusa lo storico se già scaricato dall'identificazione, altrimenti scaricalo
+			wl.Balance = balance.Balance
+
 			transfers := wl.History
 			if len(transfers) == 0 {
-				t, err := connector.GetTransactions(addr)
+				t, err := connector.GetTransactions(addr,limit)
 				if err != nil {
 					fyne.Do(func() { graph.Message("❌ errore di rete: " + err.Error()) })
 					return
@@ -79,23 +81,20 @@ func showDashboard(a fyne.App) {
 				transfers = t
 			}
 
-			// aggiornamento UI → SEMPRE dentro fyne.Do
-			// wl.Type ("BTC"/"ETH") diventa l'unità mostrata nel pannello
-			fyne.Do(func() { graph.Render(addr, wl.Type, wl.Balance, transfers) })
+			// every UI update goes inside fyne.Do
+			fyne.Do(func() { graph.Render(addr, wl.Type, wl.Balance, transfers, nodes) })
 		}()
 	}
 
 	analyze := widget.NewButton("🔍  Analizza", analyzeFn)
-	analyze.Importance = widget.HighImportance // colore "primary" (viola)
-	input.OnSubmitted = func(string) { analyzeFn() } // premere Invio = Analizza
+	analyze.Importance = widget.HighImportance
+	input.OnSubmitted = func(string) { analyzeFn() }
 
 	label := canvas.NewText("Wallet", colSilver)
 	label.TextStyle = fyne.TextStyle{Bold: true}
 
-	// input che si allarga, label a sinistra, bottone a destra
 	topBar := container.NewBorder(nil, nil, label, analyze, input)
 
-	// --- header con logo (occhio) + titolo ---
 	eyeIcon := canvas.NewImageFromResource(eyeResource)
 	eyeIcon.FillMode = canvas.ImageFillContain
 	eyeIcon.SetMinSize(fyne.NewSize(32, 32))
@@ -109,16 +108,46 @@ func showDashboard(a fyne.App) {
 		headerLine,
 	)
 
-	// zona superiore: header + barra di input
-	top := container.NewVBox(header, container.NewPadded(topBar))
+	// presets: {txs to download, counterparties to draw}
+	const (
+		lowTx, lowNodes   = 25, 12
+		medTx, medNodes   = 100, 25
+		highTx, highNodes = 500, 50
+	)
+	var btnLow, btnMed, btnHigh *widget.Button
+	setDepth := func(limit, nodes int, active *widget.Button) {
+		txLimit, nodeCap = limit, nodes
+		for _, b := range []*widget.Button{btnLow, btnMed, btnHigh} {
+			if b == active {
+				b.Importance = widget.HighImportance
+			} else {
+				b.Importance = widget.MediumImportance
+			}
+			b.Refresh()
+		}
+	}
+	btnLow = widget.NewButton("Low", func() { setDepth(lowTx, lowNodes, btnLow) })
+	btnMed = widget.NewButton("Medium", func() { setDepth(medTx, medNodes, btnMed) })
+	btnHigh = widget.NewButton("High", func() { setDepth(highTx, highNodes, btnHigh) })
+	setDepth(medTx, medNodes, btnMed) // default
 
-	// layout: header/input in alto, pannello a sinistra, grafo che riempie il resto
+	depthLabel := canvas.NewText("Ricerca", colSilver)
+	depthLabel.TextStyle = fyne.TextStyle{Bold: true}
+
+	depthRow := container.NewBorder(nil, nil, depthLabel, nil,
+		container.NewGridWithColumns(3, btnLow, btnMed, btnHigh))
+
+	// The opaque rectangle behind this strip is required: the graph widget does not
+	// clip to its own bounds, so a dragged node would show through the header.
+	topContent := container.NewVBox(header, container.NewPadded(topBar), container.NewPadded(depthRow))
+	top := container.NewStack(canvas.NewRectangle(colBg), topContent)
+
 	content := container.NewBorder(
-		top,        // top
-		nil,        // bottom
-		panel.Root, // left
-		nil,        // right
-		graph.Root, // centro (riempie)
+		top,
+		nil,
+		panel.Root,
+		nil,
+		graph.Root,
 	)
 
 	w.SetContent(content)

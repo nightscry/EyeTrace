@@ -8,15 +8,12 @@ import (
 
 
 
-
 func (W *Wallet)Indentification()(error){
 	wallet := W.Address
 
-	//check if is a BTC and his sub types
 	switch{
-	//subtype Legacy P2PKH
+	// BTC
 	case strings.HasPrefix(wallet, "1") && (stringLen(wallet) >= 24 && stringLen(wallet) <= 34):
-		//REMOVE TRASH
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
@@ -27,10 +24,9 @@ func (W *Wallet)Indentification()(error){
 			return errors.New("CheckSum invalid of this: "+ wallet)
 		}
 
-		
+
 
 	case strings.HasPrefix(wallet,"3") && stringLen(wallet) == 34:
-		//REMOVE TRASH
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
@@ -40,36 +36,35 @@ func (W *Wallet)Indentification()(error){
 		}else{
 			return errors.New("CheckSum invalid of this: "+ wallet)
 		}
-		
-		
+
+
 	case (strings.HasPrefix(wallet,"bc1q") || strings.HasPrefix(wallet, "tb1q"))&& (stringLen(wallet) == 42 || stringLen(wallet) == 62):
- 
+
 		if(checkSumBech(wallet)){
 			W.Type = "BTC"
 			W.Subtype = "BECH32"
 		}else{
 			return errors.New("Wallet is invalid: " + wallet)
 		}
-		
+
 	case (strings.HasPrefix(wallet, "bc1p") || strings.HasPrefix(wallet, "tb1p"))&& stringLen(wallet) == 62:
-		
+
 		if(checkSumBech(wallet)){
 			W.Type = "BTC"
 			W.Subtype = "BECH32M"
 		}else{
 			return errors.New("Wallet is invalid: " + wallet)
 		}
-		
-	//TEST NET
+
+	// BTC testnet
 	case (strings.HasPrefix(wallet, "m") || strings.HasPrefix(wallet, "n") || strings.HasPrefix(wallet, "2") || strings.HasPrefix(wallet, "tb1")):
-		//REMOVE TRASH
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
 		W.Type = "BTC"
 		W.Subtype = "TEST-NET"
 
-	//check if is EVM
+	// EVM
 	case stringLen(wallet) == 42 && strings.HasPrefix(wallet,"0x"):
 		if(!isHex(wallet[2:])){
 			return errors.New("Wallet is invalid: " + wallet)
@@ -82,7 +77,7 @@ func (W *Wallet)Indentification()(error){
 		}
 
 
-	//check if is dogecoin
+	// DOGE
 	case stringLen(wallet) == 34 && strings.HasPrefix(wallet,"D"):
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
@@ -93,7 +88,7 @@ func (W *Wallet)Indentification()(error){
 		}else{
 			return errors.New("CheckSum invalid of this: "+ wallet)
 		}
-	
+
 	case stringLen(wallet) == 34 && (strings.HasPrefix(wallet,"A") || strings.HasPrefix(wallet,"9")):
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
@@ -104,7 +99,7 @@ func (W *Wallet)Indentification()(error){
 		}else{
 			return errors.New("CheckSum invalid of this: "+ wallet)
 		}
-	//check if is Tron
+	// Tron
 	case stringLen(wallet) == 34 && strings.HasPrefix(wallet, "T"):
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
@@ -115,8 +110,8 @@ func (W *Wallet)Indentification()(error){
 		}else{
 			return errors.New("CheckSum invalid of this: "+ wallet)
 		}
-	
-	//check if is XRP
+
+	// XRP uses its own base58 alphabet
 	case (stringLen(wallet) >=25 && stringLen(wallet) <=35) && strings.HasPrefix(wallet, "r"):
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
@@ -127,16 +122,16 @@ func (W *Wallet)Indentification()(error){
 		}else{
 			return errors.New("CheckSum invalid of this: "+ wallet)
 		}
-	
-	//check if is solana
+
+	// Solana: raw Ed25519 key, no checksum to verify
 	case stringLen(wallet) >= 32 && stringLen(wallet) <=44:
 		if(!isBase58(wallet)){
 			return errors.New("Wallet is invalid: " + wallet)
 		}
-		
+
 		W.Type = "SOLANA"
 		W.Subtype = ""
-		
+
 
 	default:
 		return errors.New("Wallet is invalid: " + wallet)

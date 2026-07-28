@@ -16,16 +16,13 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-// colori locali del grafo
 var (
-	colEdge   = color.NRGBA{0x8b, 0x5c, 0xf6, 0x99} // archi (viola semi-trasparente)
-	colNode   = color.NRGBA{0x2a, 0x20, 0x40, 0xff} // riempimento nodo controparte
-	colNodeHi = color.NRGBA{0xa8, 0x55, 0xf7, 0xff} // nodo centrale (target)
+	colEdge   = color.NRGBA{0x8b, 0x5c, 0xf6, 0x99}
+	colNode   = color.NRGBA{0x2a, 0x20, 0x40, 0xff}
+	colNodeHi = color.NRGBA{0xa8, 0x55, 0xf7, 0xff}
 )
 
-const maxNodes = 12
-
-// parametri della simulazione a forze (stile Obsidian). Tunabili a occhio.
+// force simulation parameters, tuned by eye
 var (
 	simRepulsion = float32(9000)
 	simSpring    = float32(0.01)
@@ -35,14 +32,13 @@ var (
 	simMaxV      = float32(30)
 )
 
-// NodeInfo = i dati di un nodo, passati al pannello laterale quando lo clicchi.
 type NodeInfo struct {
 	Address  string
 	IsTarget bool
-	Balance  float64 // saldo (valorizzato solo per il target)
+	Balance  float64 // only set for the target
 	Amount   float64
 	Count    int
-	Asset    string // "BTC", "ETH"... per mostrare l'unità giusta
+	Asset    string
 }
 
 func short(a string) string {
@@ -52,20 +48,22 @@ func short(a string) string {
 	return a[:6] + "…" + a[len(a)-4:]
 }
 
-// counterparty = una controparte del target: quanto e in quante tx.
 type counterparty struct {
 	addr   string
 	amount float64
 	count  int
 }
 
-func aggregate(target string, transfers []src.Transfer) []counterparty {
+func aggregate(target string, transfers []src.Transfer, maxNodes int) []counterparty {
+	if maxNodes <= 0 {
+		maxNodes = 12
+	}
 	m := map[string]*counterparty{}
 	for _, t := range transfers {
 		var cp string
 		switch {
-		// confronto case-insensitive: gli indirizzi ETH arrivano in minuscolo
-		// dall'API ma il target è mixed-case (checksummed).
+		// EqualFold is required: ETH addresses come back lowercase from the API
+		// while the target is mixed-case (checksummed).
 		case strings.EqualFold(t.From, target) && !strings.EqualFold(t.To, target):
 			cp = t.To
 		case strings.EqualFold(t.To, target) && !strings.EqualFold(t.From, target):
@@ -73,6 +71,7 @@ func aggregate(target string, transfers []src.Transfer) []counterparty {
 		default:
 			continue
 		}
+		// drops coinbase and addressless inputs, so no ghost nodes
 		if cp == "" {
 			continue
 		}
@@ -95,11 +94,10 @@ func aggregate(target string, transfers []src.Transfer) []counterparty {
 	return list
 }
 
-// gnode: un nodo con posizione, velocità e dati.
 type gnode struct {
 	addr     string
 	label    string
-	balance  float64 // solo per il target
+	balance  float64
 	amount   float64
 	count    int
 	x, y     float32
@@ -107,7 +105,6 @@ type gnode struct {
 	isTarget bool
 }
 
-// graphWidget: grafo force-directed, animato, trascinabile e cliccabile.
 type graphWidget struct {
 	widget.BaseWidget
 	nodes    []*gnode
@@ -115,10 +112,10 @@ type graphWidget struct {
 	size     fyne.Size
 	placed   bool
 	dragging int
-	selected int // nodo selezionato col click (-1 = nessuno)
-	asset    string // "BTC" / "ETH" — unità di misura degli importi
+	selected int // -1 = nothing selected
+	asset    string
 	anim     *fyne.Animation
-	OnSelect func(NodeInfo) // chiamato quando clicchi un nodo
+	OnSelect func(NodeInfo)
 }
 
 var (
@@ -126,8 +123,9 @@ var (
 	_ fyne.Tappable  = (*graphWidget)(nil)
 )
 
-func newGraphWidget(target string, asset string, balance float64, transfers []src.Transfer) *graphWidget {
-	parties := aggregate(target, transfers)
+// One hop only: target at the centre, counterparties around it.
+func newGraphWidget(target string, asset string, balance float64, transfers []src.Transfer, maxNodes int) *graphWidget {
+	parties := aggregate(target, transfers, maxNodes)
 
 	g := &graphWidget{dragging: -1, selected: -1, asset: asset}
 	g.nodes = append(g.nodes, &gnode{addr: target, label: short(target), balance: balance, isTarget: true})
@@ -171,6 +169,7 @@ func (g *graphWidget) step() {
 	}
 	cx, cy := w/2, h/2
 
+	// repulsion between every pair of nodes
 	for i := 0; i < len(g.nodes); i++ {
 		for j := i + 1; j < len(g.nodes); j++ {
 			a, b := g.nodes[i], g.nodes[j]
@@ -188,6 +187,7 @@ func (g *graphWidget) step() {
 			b.vy -= fy
 		}
 	}
+	// edges act as springs pulling back to simRestLen
 	for _, e := range g.edges {
 		a, b := g.nodes[e[0]], g.nodes[e[1]]
 		dx, dy := b.x-a.x, b.y-a.y
@@ -210,6 +210,7 @@ func (g *graphWidget) step() {
 		if i == g.dragging {
 			continue
 		}
+		// the target stays anchored to the centre
 		if node.isTarget {
 			node.x, node.y = cx, cy
 			continue
@@ -238,7 +239,6 @@ func (g *graphWidget) startSim() {
 	g.anim.Start()
 }
 
-// ── click: seleziona il nodo e notifica il pannello ──
 func (g *graphWidget) Tapped(e *fyne.PointEvent) {
 	i := g.pick(e.Position)
 	if i < 0 {
@@ -251,7 +251,6 @@ func (g *graphWidget) Tapped(e *fyne.PointEvent) {
 	g.Refresh()
 }
 
-// ── trascinamento ──
 func (g *graphWidget) Dragged(e *fyne.DragEvent) {
 	if g.dragging < 0 {
 		g.dragging = g.pick(e.Position)
@@ -265,6 +264,7 @@ func (g *graphWidget) Dragged(e *fyne.DragEvent) {
 
 func (g *graphWidget) DragEnd() { g.dragging = -1 }
 
+// nearest node within 22px, or -1
 func (g *graphWidget) pick(pos fyne.Position) int {
 	best, bestD := -1, float32(22)
 	for i, n := range g.nodes {
@@ -306,6 +306,7 @@ func (g *graphWidget) CreateRenderer() fyne.WidgetRenderer {
 		}
 		r.labels = append(r.labels, lbl)
 	}
+	// draw order: edges, then circles, then labels on top
 	for _, e := range r.edges {
 		r.objects = append(r.objects, e)
 	}
@@ -341,7 +342,6 @@ func (r *graphRenderer) relayout() {
 		c.Resize(fyne.NewSize(rad*2, rad*2))
 		c.Move(fyne.NewPos(n.x-rad, n.y-rad))
 
-		// evidenzia il nodo selezionato
 		if i == g.selected {
 			c.StrokeColor = colText
 			c.StrokeWidth = 4
@@ -373,11 +373,11 @@ func (r *graphRenderer) Destroy() {
 	}
 }
 
-// ── GraphView: area del grafo con watermark ──
+// GraphView is the graph area, watermark included.
 type GraphView struct {
 	Root     *fyne.Container
 	host     *fyne.Container
-	OnSelect func(NodeInfo) // impostato dalla dashboard, propagato ai grafi creati
+	OnSelect func(NodeInfo) // set by the dashboard, passed on to each new graph
 }
 
 func NewGraphView() *GraphView {
@@ -409,13 +409,13 @@ func (gv *GraphView) Message(msg string) {
 	gv.host.Refresh()
 }
 
-func (gv *GraphView) Render(target string, asset string, balance float64, transfers []src.Transfer) {
-	g := newGraphWidget(target, asset, balance, transfers)
+func (gv *GraphView) Render(target string, asset string, balance float64, transfers []src.Transfer, maxNodes int) {
+	g := newGraphWidget(target, asset, balance, transfers, maxNodes)
 	g.OnSelect = gv.OnSelect
 	gv.host.Objects = []fyne.CanvasObject{g}
 	gv.host.Refresh()
 
-	// auto-seleziona il target: il pannello mostra subito il wallet analizzato + saldo
+	// preselect the target so the panel shows the analysed wallet right away
 	g.selected = 0
 	if g.OnSelect != nil {
 		g.OnSelect(g.infoOf(0))

@@ -18,11 +18,9 @@ func stringLen(str string)(int){
 	return l
 }
 
-//base58 checker 
-//funzione che scorre i caratteri della stringa e controlla per ogni carattere se si trova in questo alfabeto: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
-// niente:  0, O, I, l e altri caratteri
+// Base58 excludes the look-alike characters 0, O, I and l.
 func isBase58(wallet string)(bool){
-	
+
 	for _, c := range wallet{
 		if(!strings.Contains(alphabetBase58,string(c))){
 			return false
@@ -30,13 +28,12 @@ func isBase58(wallet string)(bool){
 	}
 
 	return true
-	
+
 }
 
 
-//HEX checker
 func isHex(payload string)(bool){
-	
+
 	for _, c := range payload{
 		if(!strings.Contains(alphabetHex,string(c))){
 			return false

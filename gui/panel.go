@@ -9,15 +9,14 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-// SidePanel: pannello laterale sinistro coi dati del nodo selezionato.
 type SidePanel struct {
 	Root *fyne.Container
-	body *fyne.Container // contenuto ricostruito ad ogni selezione
+	body *fyne.Container // rebuilt on every selection
 }
 
 func NewSidePanel() *SidePanel {
 	bg := canvas.NewRectangle(colPanel)
-	bg.SetMinSize(fyne.NewSize(290, 0)) // larghezza fissa
+	bg.SetMinSize(fyne.NewSize(290, 0)) // fixed width
 
 	body := container.NewVBox()
 	p := &SidePanel{body: body}
@@ -26,7 +25,6 @@ func NewSidePanel() *SidePanel {
 	return p
 }
 
-// ── piccoli helper di stile ──
 
 func titleText(s string) *canvas.Text {
 	t := canvas.NewText(s, colPurpleHi)
@@ -57,7 +55,7 @@ func value(s string) *canvas.Text {
 
 func addrLabel(s string) *widget.Label {
 	l := widget.NewLabel(s)
-	l.Wrapping = fyne.TextWrapBreak // gli indirizzi lunghi vanno a capo
+	l.Wrapping = fyne.TextWrapBreak // long addresses wrap instead of overflowing
 	l.TextStyle = fyne.TextStyle{Monospace: true}
 	return l
 }
@@ -77,8 +75,7 @@ func (p *SidePanel) showEmpty() {
 	)
 }
 
-// Show aggiorna il pannello coi dati del nodo cliccato.
-// L'unità (BTC/ETH/...) arriva da n.Asset, quindi è dinamica.
+// The unit comes from n.Asset, so it follows the analysed chain.
 func (p *SidePanel) Show(n NodeInfo) {
 	if n.IsTarget {
 		p.set(

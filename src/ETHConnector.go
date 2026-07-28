@@ -8,12 +8,10 @@ import (
 	"strconv"
 )
 
-//struct per i dati del balance API
 type ethBalanceResponse struct {
 	Result string `json:"result"`
 }
 
-//struct per i dati dell'history api
 type ethHistory struct{
 	Result []struct{
 		From string `json:"from"`
@@ -24,7 +22,7 @@ type ethHistory struct{
 	} `json:"result"`
 }
 
-//convertion wei to eth
+// Blockscout returns wei as a decimal string, so it goes through big, never float
 func weiToeth(value string)(float64){
 
 
@@ -33,31 +31,35 @@ func weiToeth(value string)(float64){
 
 	ethF := new(big.Float).SetInt(wei)
 	ethF.Quo(ethF,big.NewFloat(1e18))
-	
+
 	result, _ := ethF.Float64()
 	return result
 }
 
 
-//Get balance ETH
-func (Eth ETHConnector)GetBalance(address string)(float64,error){
+func (Eth ETHConnector)GetBalance(address string)(BalanceTxCount,error){
+
 	url := "https://eth.blockscout.com/api?module=account&action=balance&address=" + address
 
 	resp, err := http.Get(url)
-	if(err != nil){return float64(0), err}
+	if(err != nil){return BalanceTxCount{}, err}
 
 	defer resp.Body.Close()
 
 	var data ethBalanceResponse
 	err = json.NewDecoder(resp.Body).Decode(&data)
-	if(err !=nil){ return float64(0), err}
+	if(err !=nil){ return BalanceTxCount{}, err}
 
-	return weiToeth(data.Result), nil
+
+	// TODO: TxCount is still unset here; the entity resolver will need it
+	return BalanceTxCount{
+		Balance: weiToeth(data.Result),
+	}, nil
 }
 
-//get history eth
-func (Eth ETHConnector)GetTransactions(address string)([]Transfer,error){
-	url := fmt.Sprintf("https://eth.blockscout.com/api?module=account&action=txlist&address=%s&sort=desc&page=1&offset=25",address)
+// Here offset IS the page size, so one call is enough (up to ~10k txs)
+func (Eth ETHConnector)GetTransactions(address string, limit int)([]Transfer,error){
+	url := fmt.Sprintf("https://eth.blockscout.com/api?module=account&action=txlist&address=%s&sort=desc&page=1&offset=%d",address, limit)
 
 	resp, err := http.Get(url)
 	if(err != nil){ return nil, err}
@@ -87,4 +89,3 @@ func (Eth ETHConnector)GetTransactions(address string)([]Transfer,error){
 
 	return result, nil
 }
-

@@ -14,19 +14,25 @@ type Wallet struct{
 	Address string
 	Type string
 	Subtype string
-	//more information about wallet
 	Balance float64
 	History []Transfer
 }
 
 
-//interfaccia
+// Every connector must implement this: changing a signature breaks all of them.
 type Connector interface{
-	GetBalance(address string)(float64,error)
-	GetTransactions(address string)([]Transfer,error)
+	GetBalance(address string)(BalanceTxCount,error)
+	GetTransactions(address string, limit int)([]Transfer,error)
 }
 
-//struct BTC
+
+// TxCount is the wallet's total tx count, kept for the entity resolver.
+type BalanceTxCount struct{
+	Balance float64
+	TxCount int
+}
+
+
 type BTCconnector struct{}
-//struct eth
 type ETHConnector struct{}
+type DOGEConnector struct{}

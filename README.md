@@ -120,7 +120,8 @@ Core design: a shared `Connector` interface and a chain-agnostic `Transfer`, so 
 - [ ] Recursive crawling (counterparties of counterparties)
 - [ ] Local cache (SQLite)
 - [ ] Zoom / pan / directional arrows on the graph
-- [ ] Entity recognition (exchange, mixer, bridge) + risk score
+- [ ] Exchange & entity identification (exchange, mixer, bridge labels) + risk score
+- [ ] AI-assisted explanations (plain-language summary of an investigation)
 - [ ] Report export / save investigations
 
 ---
