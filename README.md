@@ -114,9 +114,9 @@ Core design: a shared `Connector` interface and a chain-agnostic `Transfer`, so 
 ## Roadmap
 
 - [x] Multi-chain detector with checksum validation
-- [x] Keyless BTC + ETH connectors behind a common interface
+- [x] Keyless BTC + ETH + DOGE connectors behind a common interface
 - [x] GUI: force-directed graph + details panel + dynamic balance
-- [ ] DOGE / Tron / XRP / Solana connectors
+- [ ] Tron / XRP / Solana connectors
 - [ ] Recursive crawling (counterparties of counterparties)
 - [ ] Local cache (SQLite)
 - [ ] Zoom / pan / directional arrows on the graph
