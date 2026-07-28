@@ -101,7 +101,7 @@ eyetracker/
 │   ├── model.go           # Transfer, Wallet, Connector interface
 │   ├── BTCconnector.go    # Blockstream (UTXO model)
 │   ├── ETHConnector.go    # Blockscout (account model)
-│   └── DOGEconnetor.go    # BlockCypher (UTXO model)
+│   └── DOGEConnector.go   # BlockCypher (UTXO model)
 └── gui/                   # interface (package gui)
     ├── app.go             # app + theme + splash -> dashboard
     ├── theme.go           # NightScry theme (palette + embedded logo)
