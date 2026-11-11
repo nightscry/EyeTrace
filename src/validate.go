@@ -41,3 +41,21 @@ func isHex(payload string)(bool){
 	}
 	return true
 }
+
+
+// UTXO txs are N inputs -> M outputs, with no single sender. When the analysed
+// address is one of the inputs it is the one spending, so it becomes the sender:
+// taking just the first input would miss every tx where the target is input #2+.
+// Otherwise the first addressed input stands for the sender side.
+func utxoSender(target string, inputs []string) string {
+	first := ""
+	for _, a := range inputs {
+		if a == target {
+			return target
+		}
+		if first == "" {
+			first = a
+		}
+	}
+	return first
+}

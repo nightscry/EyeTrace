@@ -28,3 +28,14 @@ eyetracker.exe
 
 # File di debug
 addressTest.txt
+
+# Output di fyne package / fyne-cross
+*.app
+*.apk
+*.ipa
+fyne-cross/
+/EyeTrace
+
+# Coverage / profiling
+coverage.*
+*.prof

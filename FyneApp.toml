@@ -1,0 +1,11 @@
+Website = "https://github.com/nightscry/EyeTrace"
+
+[Details]
+Icon = "gui/assets/logo.png"
+Name = "EyeTrace"
+ID = "com.nightscry.eyetrace"
+Version = "1.0.0"
+Build = 1
+
+[Migrations]
+fyneDo = true

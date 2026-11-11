@@ -1,9 +1,5 @@
 package src
 
-import (
-	"encoding/json"
-	"net/http"
-)
 
 
 type addressResponseBTC struct{
@@ -36,17 +32,19 @@ type transactionsBTC struct{
 
 
 
-func (B BTCconnector)GetBalance(address string)(BalanceTxCount,error){
-	url := "https://blockstream.info/api/address/"+address
-
-	resp, err := http.Get(url)
-	if(err!=nil){
-		return BalanceTxCount{}, err
+// Blockstream serves testnet under its own prefix, same API shape.
+func (B BTCconnector) apiBase() string {
+	if B.Testnet {
+		return "https://blockstream.info/testnet/api"
 	}
-	defer resp.Body.Close()
+	return "https://blockstream.info/api"
+}
+
+func (B BTCconnector)GetBalance(address string)(BalanceTxCount,error){
+	url := B.apiBase() + "/address/" + address
 
 	var data addressResponseBTC
-	if err:= json.NewDecoder(resp.Body).Decode(&data); err != nil{
+	if err := getJSON(url, &data); err != nil{
 		return BalanceTxCount{}, err
 	}
 
@@ -68,7 +66,7 @@ func (B BTCconnector)GetTransactions(address string, limit int)([]Transfer,error
 		limit = 25
 	}
 
-	base := "https://blockstream.info/api/address/" + address + "/txs"
+	base := B.apiBase() + "/address/" + address + "/txs"
 
 	var result []Transfer
 	fetched := 0   // txs processed, not Transfers: 1 tx = N outputs
@@ -80,17 +78,10 @@ func (B BTCconnector)GetTransactions(address string, limit int)([]Transfer,error
 			url = base + "/chain/" + lastSeen
 		}
 
-		resp, err := http.Get(url)
-		if err != nil {
-			return nil, err
-		}
-
 		var page []transactionsBTC
-		if err := json.NewDecoder(resp.Body).Decode(&page); err != nil {
-			resp.Body.Close()
+		if err := getJSON(url, &page); err != nil {
 			return nil, err
 		}
-		resp.Body.Close()
 
 		if len(page) == 0 {
 			break
@@ -101,17 +92,13 @@ func (B BTCconnector)GetTransactions(address string, limit int)([]Transfer,error
 				break
 			}
 
-			// sender = first vin carrying an address; coinbase txs have none
-			from := ""
+			var inputs []string
 			for _, vin := range d.Vin {
-				if vin.IsCoinBase {
-					continue
-				}
-				if vin.Prevout.ScriptPubkeyAddress != "" {
-					from = vin.Prevout.ScriptPubkeyAddress
-					break
+				if !vin.IsCoinBase {
+					inputs = append(inputs, vin.Prevout.ScriptPubkeyAddress)
 				}
 			}
+			from := utxoSender(address, inputs)
 
 			// one Transfer per addressed output; skips OP_RETURN and non-standard scripts
 			for _, vout := range d.Vout {

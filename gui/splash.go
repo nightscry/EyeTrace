@@ -47,7 +47,7 @@ func showSplash(a fyne.App, onDone func()) {
 	w.Show()
 
 	// UI work must run on the main thread, hence fyne.Do
-	time.AfterFunc(5000*time.Millisecond, func() {
+	time.AfterFunc(2000*time.Millisecond, func() {
 		fyne.Do(func() {
 			onDone() // open the dashboard first, then close the splash
 			w.Close()

@@ -5,137 +5,102 @@ import (
 	"strings"
 )
 
+// Base58Check version bytes. Deciding on the decoded version byte instead of the
+// first character avoids the old prefix-switch traps: a Solana key starting with
+// "2", "m" or "A" is no longer taken for a BTC testnet or a DOGE address.
+type base58Kind struct {
+	chain   string
+	subtype string
+	testnet bool
+}
 
+var base58Versions = map[byte]base58Kind{
+	0x00: {"BTC", "P2PKH", false},
+	0x05: {"BTC", "P2SH", false},
+	0x6f: {"BTC", "P2PKH", true},
+	0xc4: {"BTC", "P2SH", true},
+	0x1e: {"DOGE", "P2PKH", false},
+	0x16: {"DOGE", "P2SH", false},
+	0x41: {"TRON", "", false},
+}
 
-
-func (W *Wallet)Indentification()(error){
+func (W *Wallet) Indentification() error {
 	wallet := W.Address
+	if wallet == "" {
+		return errors.New("Wallet is empty")
+	}
 
-	switch{
-	// BTC
-	case strings.HasPrefix(wallet, "1") && (stringLen(wallet) >= 24 && stringLen(wallet) <= 34):
-		if(!isBase58(wallet)){
-			return errors.New("Wallet is invalid: " + wallet)
-		}
-		if(checkSum(wallet,alphabetBase58)){
-			W.Type = "BTC"
-			W.Subtype = "P2PKH"
-		}else{
-			return errors.New("Invalid checksum: "+ wallet)
-		}
-
-
-
-	case strings.HasPrefix(wallet,"3") && stringLen(wallet) == 34:
-		if(!isBase58(wallet)){
-			return errors.New("Wallet is invalid: " + wallet)
-		}
-		if(checkSum(wallet,alphabetBase58)){
-			W.Type = "BTC"
-			W.Subtype = "P2SH"
-		}else{
-			return errors.New("Invalid checksum: "+ wallet)
-		}
-
-
-	case (strings.HasPrefix(wallet,"bc1q") || strings.HasPrefix(wallet, "tb1q"))&& (stringLen(wallet) == 42 || stringLen(wallet) == 62):
-
-		if(checkSumBech(wallet)){
-			W.Type = "BTC"
-			W.Subtype = "BECH32"
-		}else{
-			return errors.New("Wallet is invalid: " + wallet)
-		}
-
-	case (strings.HasPrefix(wallet, "bc1p") || strings.HasPrefix(wallet, "tb1p"))&& stringLen(wallet) == 62:
-
-		if(checkSumBech(wallet)){
-			W.Type = "BTC"
-			W.Subtype = "BECH32M"
-		}else{
-			return errors.New("Wallet is invalid: " + wallet)
-		}
-
-	// BTC testnet
-	case (strings.HasPrefix(wallet, "m") || strings.HasPrefix(wallet, "n") || strings.HasPrefix(wallet, "2") || strings.HasPrefix(wallet, "tb1")):
-		if(!isBase58(wallet)){
-			return errors.New("Wallet is invalid: " + wallet)
+	// BTC SegWit / Taproot
+	low := strings.ToLower(wallet)
+	if strings.HasPrefix(low, "bc1") || strings.HasPrefix(low, "tb1") {
+		hrp, version, program, ok := segwitDecode(wallet)
+		if !ok || (hrp != "bc" && hrp != "tb") {
+			return errors.New("Invalid checksum: " + wallet)
 		}
 		W.Type = "BTC"
-		W.Subtype = "TEST-NET"
+		W.Testnet = hrp == "tb"
+		switch {
+		case version == 0 && len(program) == 20:
+			W.Subtype = "BECH32 (P2WPKH)"
+		case version == 0:
+			W.Subtype = "BECH32 (P2WSH)"
+		case version == 1 && len(program) == 32:
+			W.Subtype = "BECH32M (Taproot)"
+		default:
+			W.Subtype = "BECH32M"
+		}
+		return nil
+	}
 
 	// EVM
-	case stringLen(wallet) == 42 && strings.HasPrefix(wallet,"0x"):
-		if(!isHex(wallet[2:])){
+	if strings.HasPrefix(wallet, "0x") {
+		if stringLen(wallet) != 42 || !isHex(wallet[2:]) {
 			return errors.New("Wallet is invalid: " + wallet)
 		}
-		if(checkSumEvm(wallet)){
-			W.Type = "ETH"
-			W.Subtype = ""
-		}else{
-			return errors.New("Wallet is invalid: " + wallet)
+		body := wallet[2:]
+		switch {
+		case checkSumEvm(wallet):
+			W.Subtype = "EIP-55"
+		// EIP-55: an all-lower or all-upper address carries no checksum at all,
+		// and explorers often print them that way, so it is accepted as is
+		case body == strings.ToLower(body) || body == strings.ToUpper(body):
+			W.Subtype = "no checksum"
+		default:
+			return errors.New("Invalid checksum: " + wallet)
 		}
+		W.Type = "ETH"
+		return nil
+	}
 
-
-	// DOGE
-	case stringLen(wallet) == 34 && strings.HasPrefix(wallet,"D"):
-		if(!isBase58(wallet)){
-			return errors.New("Wallet is invalid: " + wallet)
-		}
-		if(checkSum(wallet, alphabetBase58)){
-			W.Type = "DOGE"
-			W.Subtype = "P2PKH"
-		}else{
-			return errors.New("Invalid checksum: "+ wallet)
-		}
-
-	case stringLen(wallet) == 34 && (strings.HasPrefix(wallet,"A") || strings.HasPrefix(wallet,"9")):
-		if(!isBase58(wallet)){
-			return errors.New("Wallet is invalid: " + wallet)
-		}
-		if(checkSum(wallet, alphabetBase58)){
-			W.Type = "DOGE"
-			W.Subtype = "P2SH"
-		}else{
-			return errors.New("Invalid checksum: "+ wallet)
-		}
-	// Tron
-	case stringLen(wallet) == 34 && strings.HasPrefix(wallet, "T"):
-		if(!isBase58(wallet)){
-			return errors.New("Wallet is invalid: " + wallet)
-		}
-		if(checkSum(wallet, alphabetBase58)){
-			W.Type = "TRON"
-			W.Subtype = "TRC20"
-		}else{
-			return errors.New("Invalid checksum: "+ wallet)
-		}
-
-	// XRP uses its own base58 alphabet
-	case (stringLen(wallet) >=25 && stringLen(wallet) <=35) && strings.HasPrefix(wallet, "r"):
-		if(!isBase58(wallet)){
-			return errors.New("Wallet is invalid: " + wallet)
-		}
-		if(checkSum(wallet,alphabetBase58XRP)){
-			W.Type = "XRP"
-			W.Subtype = ""
-		}else{
-			return errors.New("Invalid checksum: "+ wallet)
-		}
-
-	// Solana: raw Ed25519 key, no checksum to verify
-	case stringLen(wallet) >= 32 && stringLen(wallet) <=44:
-		if(!isBase58(wallet)){
-			return errors.New("Wallet is invalid: " + wallet)
-		}
-
-		W.Type = "SOLANA"
-		W.Subtype = ""
-
-
-	default:
+	if !isBase58(wallet) {
 		return errors.New("Wallet is invalid: " + wallet)
 	}
 
-	return nil
+	// BTC legacy / DOGE / Tron: 1 version byte + 20-byte hash
+	if payload, ok := decodeBase58Check(wallet, alphabetBase58); ok && len(payload) == 21 {
+		if kind, known := base58Versions[payload[0]]; known {
+			W.Type, W.Subtype, W.Testnet = kind.chain, kind.subtype, kind.testnet
+			return nil
+		}
+	}
+
+	// XRP: same scheme, own alphabet, account IDs always start with "r" (version 0x00)
+	if strings.HasPrefix(wallet, "r") {
+		if payload, ok := decodeBase58Check(wallet, alphabetBase58XRP); ok && len(payload) == 21 && payload[0] == 0 {
+			W.Type, W.Subtype = "XRP", ""
+			return nil
+		}
+	}
+
+	// Solana: raw Ed25519 key, no checksum to verify, but it must be exactly 32 bytes
+	if raw, ok := decodeBase58(wallet, alphabetBase58); ok && len(raw) == 32 {
+		W.Type, W.Subtype = "SOLANA", ""
+		return nil
+	}
+
+	// decodes to the size of a checksummed address: almost surely a typo
+	if raw, _ := decodeBase58(wallet, alphabetBase58); len(raw) == 25 {
+		return errors.New("Invalid checksum: " + wallet)
+	}
+	return errors.New("Wallet is invalid: " + wallet)
 }

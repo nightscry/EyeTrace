@@ -1,9 +1,7 @@
 package src
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 )
 
@@ -31,13 +29,8 @@ type transactionDOGE struct{
 func (C DOGEConnector)GetBalance(address string)(BalanceTxCount,error){
 	url := fmt.Sprintf("https://api.blockcypher.com/v1/doge/main/addrs/%s/balance", address)
 
-	resp, err := http.Get(url)
-	if(err != nil ){ return BalanceTxCount{}, err }
-
-	defer resp.Body.Close()
-
 	var data addressResponseDoge
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {return BalanceTxCount{}, err}
+	if err := getJSON(url, &data); err != nil {return BalanceTxCount{}, err}
 
 	result := BalanceTxCount{
 		Balance: float64(data.Balance) / 100_000_000,
@@ -69,17 +62,10 @@ func (C DOGEConnector)GetTransactions(address string, limit int)([]Transfer,erro
 			url = fmt.Sprintf("%s&before=%d", base, before)
 		}
 
-		resp, err := http.Get(url)
-		if err != nil {
-			return nil, err
-		}
-
 		var data transactionDOGE
-		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-			resp.Body.Close()
+		if err := getJSON(url, &data); err != nil {
 			return nil, err
 		}
-		resp.Body.Close()
 
 		if len(data.Txs) == 0 {
 			break
@@ -91,14 +77,14 @@ func (C DOGEConnector)GetTransactions(address string, limit int)([]Transfer,erro
 				break
 			}
 
-			// coinbase inputs carry no addresses, so this guard drops them too
-			from := ""
+			// coinbase inputs carry no addresses, utxoSender skips them
+			var inputs []string
 			for _, in := range tx.Inputs {
-				if len(in.Addresses) > 0 && in.Addresses[0] != "" {
-					from = in.Addresses[0]
-					break
+				if len(in.Addresses) > 0 {
+					inputs = append(inputs, in.Addresses[0])
 				}
 			}
+			from := utxoSender(address, inputs)
 
 			// BlockCypher sends the timestamp as RFC3339, not as an int.
 			// Unconfirmed txs have an empty field, so ts stays 0.
